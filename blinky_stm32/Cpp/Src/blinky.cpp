@@ -63,23 +63,26 @@ void BSP_ledOn(void) {
     consoleDisplay("LED ON\r\n");
     BSP_SetLed(s_ledIndex, 1);
 }
-#if 0
-extern "C" void Q_onError(char const * const module, int loc) {
-    cout << "Assertion failed in " << module << ':' << loc << endl;
-    exit(-1);
-}
-#endif
+
+static uint8_t s_clockReady = 0;
 
 void Q_SysTick_Handler(void) {
-    QP::QTimeEvt::TICK_X(0U, &l_SysTick_Handler); // time events at rate 0
-    QV_ARM_ERRATUM_838869();
+    if ( s_clockReady )
+    {
+        QP::QTimeEvt::TICK_X(0U, &l_SysTick_Handler); // time events at rate 0
+        QV_ARM_ERRATUM_838869();
+    }
 }
 
 namespace QP {
 namespace QF {
 void onStartup(void)
 {
-    SysTick_Config(SystemCoreClock / BSP_TICKS_PER_SEC);
+    if ( s_clockReady == 0 )
+    {
+        SysTick_Config(SystemCoreClock / BSP_TICKS_PER_SEC);
+        s_clockReady = 1;
+    }
 }
 
 void onCleanup(void) {}
@@ -121,6 +124,7 @@ int bspMain() {
     QF::init(); // initialize the framework
 
     consoleDisplay("blinky starting\r\n");
+    QF::onStartup();
 
     static QEvtPtr blinky_queueSto[10];
     AO_Blinky->start(1U, // priority
