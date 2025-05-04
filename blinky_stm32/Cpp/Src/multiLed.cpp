@@ -51,7 +51,7 @@ void CMultiLed::SetLed(uint8_t index, uint8_t state)
         EDigitalPin ePin = static_cast<EDigitalPin>(m_ledPins[index]);
         bool pinState = (state == 0) ? false : true;
         CDigitalOut::Write(ePin, pinState);
-        consoleDisplayArgs("CMultiLed::SetLed: setting led %d to %d\r\n", index, pinState);
+        //consoleDisplayArgs("CMultiLed::SetLed: setting led %d to %d\r\n", index, pinState);
     }
     else
     {
@@ -65,7 +65,7 @@ void CMultiLed::ToggleLed(uint8_t index)
     {
         EDigitalPin ePin = static_cast<EDigitalPin>(m_ledPins[index]);
         CDigitalOut::Toggle(ePin);
-        consoleDisplayArgs("CMultiLed::ToggleLed: toggling led %d\r\n", index);
+        //consoleDisplayArgs("CMultiLed::ToggleLed: toggling led %d\r\n", index);
     }
     else
     {
@@ -75,8 +75,8 @@ void CMultiLed::ToggleLed(uint8_t index)
 
 void CMultiLed::ShowState()
 {
-    consoleDisplayArgs("CMultiLed: numpins = %d, maxNumber = %d\r\n",
-    		m_numPins, m_maxNumber);
+    //consoleDisplayArgs("CMultiLed: numpins = %d, maxNumber = %d\r\n",
+    //		m_numPins, m_maxNumber);
 }
 
 void CMultiLed::SetNumber(uint8_t number)

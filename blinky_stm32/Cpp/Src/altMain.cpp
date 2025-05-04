@@ -15,6 +15,7 @@
 #include "gpio.h"
 #include "usart.h"
 #include "bsp.hpp"
+#include "qp_port.hpp"
 
 #include "multiLed.hpp"
 #include "digitalOut.hpp"
@@ -22,7 +23,13 @@
 
 void appSysTickHandler()
 {
+	// Use this variable to communicate with QV::onIdle
+	// to indicate that a critical interrupt from the app
+	// has occurred and needs to be service.
 	Q_SysTick_Handler();
+
+	if ( !QF_getSysAppEvent() )
+		QF_setSysAppEvent();
 }
 
 static uint8_t s_pins[] =

@@ -43,7 +43,7 @@
     #error Simple Blinky Application does not provide Spy build configuration
 #endif
 
-#define SHOW_BLINK
+//#define SHOW_BLINK
 //#define USE_HAL
 
 extern CMultiLed g_multiLed;
@@ -60,6 +60,53 @@ constexpr std::uint32_t B1_PIN      {13U};
 //Q_DEFINE_THIS_FILE
 
 } // unnamed local namespace
+
+// Define functions for enabling/disabling HAL interrupts for critical sections
+// and for setting/detecting Q system events.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void QF_int_disable_(void)
+{
+	HAL_SuspendTick();
+}
+
+void QF_int_enable_(void)
+{
+	HAL_ResumeTick();
+}
+
+void QF_crit_entry_(void)
+{
+	HAL_SuspendTick();
+}
+
+void QF_crit_exit_(void)
+{
+	HAL_ResumeTick();
+}
+
+volatile static uint16_t s_sysAppInterrupt = 0;
+
+volatile void QF_setSysAppEvent()
+{
+	s_sysAppInterrupt = 1;
+}
+
+volatile void QF_clearSysAppEvent()
+{
+	s_sysAppInterrupt = 0;
+}
+
+volatile uint16_t QF_getSysAppEvent()
+{
+	return s_sysAppInterrupt;
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 //============================================================================
 // Error handler and ISRs...
@@ -245,6 +292,12 @@ void QV::onIdle() {
     QF_INT_ENABLE(); // for now, just enable interrupts
 #else
     QF_INT_ENABLE(); // just enable interrupts
+    // g_sysAppInterrupt is set by events in QP indicating system state
+    // has changed and the ready queue must be re-examined for active objects
+    // ready to run. Continually disabling and enabling interrupts is
+    // very inefficient and interferes with the event loop.
+    while ( !QF_getSysAppEvent() ) {}
+    QF_clearSysAppEvent();
 #endif
 }
 

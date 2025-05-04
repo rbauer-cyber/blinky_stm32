@@ -54,13 +54,13 @@ enum { BSP_TICKS_PER_SEC = 2000 };
 static uint8_t s_ledIndex = 0;
 
 void BSP_ledOff(void) {
-    consoleDisplay("LED OFF\r\n");
+    //consoleDisplay("LED OFF\r\n");
     BSP_SetLed(CMultiLed::MAX_LEDS, 0);
     BSP_SetLed(s_ledIndex++, 0);
     s_ledIndex %= CMultiLed::MAX_LEDS;
 }
 void BSP_ledOn(void) {
-    consoleDisplay("LED ON\r\n");
+    //consoleDisplay("LED ON\r\n");
     BSP_SetLed(s_ledIndex, 1);
 }
 
@@ -121,9 +121,12 @@ protected:
 QActive * const AO_Blinky = &Blinky::inst;
 
 int bspMain() {
+    static QF_MPOOL_EL(QP::QEvt) smlPoolSto[20];
+    QP::QF::poolInit(smlPoolSto, sizeof(smlPoolSto), sizeof(smlPoolSto[0]));
+
     QF::init(); // initialize the framework
 
-    consoleDisplay("blinky starting\r\n");
+    //consoleDisplay("blinky starting\r\n");
     QF::onStartup();
 
     static QEvtPtr blinky_queueSto[10];

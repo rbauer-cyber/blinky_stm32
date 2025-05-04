@@ -64,7 +64,6 @@ BSP_ledOn();</entry>
   <file name="blinky.cpp">
    <text>#include &quot;qpcpp.hpp&quot;
 #include &lt;iostream&gt;
-#include &lt;cstdlib&gt; // for exit()
 #include &quot;main.h&quot;
 #include &quot;console.h&quot;
 #include &quot;multiLed.hpp&quot;
