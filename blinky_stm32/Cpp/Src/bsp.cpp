@@ -26,7 +26,6 @@
 // <www.state-machine.com/licensing>
 // <info@state-machine.com>
 //============================================================================
-#include <console.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +34,7 @@
 #include "qpcpp.hpp"             // QP/C++ real-time embedded framework
 #include "blinky.hpp"            // Blinky Application interface
 #include "bsp.hpp"               // Board Support Package
+#include "console.h"
 #include "multiLed.hpp"
 #include "stm32f4xx_hal.h"
 // add other drivers if necessary...

@@ -21,6 +21,8 @@
 #include "digitalOut.hpp"
 #include "console.h"
 
+extern CMultiLed g_multiLed;
+
 void appSysTickHandler()
 {
 	// Use this variable to communicate with QV::onIdle
@@ -31,18 +33,6 @@ void appSysTickHandler()
 	if ( !QF_getSysAppEvent() )
 		QF_setSysAppEvent();
 }
-
-static uint8_t s_pins[] =
-{
-		kDigitalPin08, // PA9
-		kDigitalPin09, // PC7
-		kDigitalPin10, // PB6
-		kDigitalPin11, // PA7
-		kDigitalPin12, // PA6
-};
-
-static uint8_t s_numPins = sizeof(s_pins) / sizeof(s_pins[0]);
-CMultiLed g_multiLed( s_pins, s_numPins );
 
 void BSP_SetLed(uint8_t index, unsigned int state)
 {
