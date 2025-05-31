@@ -56,7 +56,44 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+// Use interrupts from Timer 2 to measure elapsed time in micro-seconds
+// Timer 2 runs at 50 MHZ, period is 20 micro-seconds.
+volatile uint32_t s_elapsedTimeUs = 0;
 
+uint32_t getMicros()
+{
+	// Resolution is 2 micro-secs using TIM2 at 50 MHz, counter period set 99, 2us
+	return s_elapsedTimeUs;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	/* Prevent unused argument(s) compilation warning */
+	UNUSED(htim);
+
+	if ( htim == &htim2 )
+	{
+		//Timer 2 period is 2 micro-secs, 100 counts with auto-reload
+		s_elapsedTimeUs += 2;
+#if 0
+		// Use this technique for Stepper acceleration control.
+		if ( s_timerCount >= 10000 )
+		{
+			s_timerCount = 0;
+			g_timerInterruptFlag = 1;
+
+			if ( ++s_timerChangeCount > 7 )
+			{
+				// The Frequency of the timer is 50 MHz.
+				// Change the period of the timer pulses
+				s_timerPeriod = (s_timerPeriod == 5000) ? 2500 : 5000;
+				__HAL_TIM_SET_AUTORELOAD(&htim4, s_timerPeriod);
+				s_timerChangeCount = 0;
+			}
+		}
+#endif
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,9 +126,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  MX_TIM4_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */

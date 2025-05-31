@@ -57,6 +57,7 @@ void altMain();
 void appSysTickHandler();
 void Q_SysTick_Handler(void);
 void BSP_SetLed(uint8_t index, unsigned int state);
+uint32_t getMicros();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

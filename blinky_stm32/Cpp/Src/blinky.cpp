@@ -37,7 +37,6 @@
 //$endhead${.::blinky.cpp} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #include "qpcpp.hpp"
 #include <iostream>
-#include <cstdlib> // for exit()
 #include "main.h"
 #include "console.h"
 #include "multiLed.hpp"
@@ -107,9 +106,22 @@ private:
 
 public:
     static Blinky inst;
+    std::uint32_t m_intervalStartTime;
+    std::uint32_t m_intervalEndTime;
+    std::uint32_t m_intervalElapsedTime;
+    std::uint32_t m_intervalElapsedTimeDelta;
+    std::uint32_t m_maxElapsedTimeDelta;
+    std::uint32_t m_intervalCount;
+    std::uint32_t m_minElapsedTimeDelta;
+    std::uint32_t m_avgElapsedTimeDelta;
+    const std::uint32_t kIntervalOffset;
+    std::uint32_t m_avgElapsedTime;
 
 public:
     Blinky();
+    void UpdateElapsedTime();
+    void DisplayElapsedTime();
+    void DisplayElapsedTimeDelta();
 
 protected:
     Q_STATE_DECL(initial);
@@ -123,7 +135,6 @@ QActive * const AO_Blinky = &Blinky::inst;
 int bspMain() {
     static QF_MPOOL_EL(QP::QEvt) smlPoolSto[20];
     QP::QF::poolInit(smlPoolSto, sizeof(smlPoolSto), sizeof(smlPoolSto[0]));
-
     QF::init(); // initialize the framework
 
     //consoleDisplay("blinky starting\r\n");
@@ -151,14 +162,79 @@ Blinky Blinky::inst;
 //${AOs::Blinky::Blinky} .....................................................
 Blinky::Blinky()
 : QActive(Q_STATE_CAST(&Blinky::initial)),
-    m_timeEvt(this, TIMEOUT_SIG, 0U)
+    m_timeEvt(this, TIMEOUT_SIG, 0U),
+    kIntervalOffset(4)
 {}
+
+//${AOs::Blinky::UpdateElapsedTime} ..........................................
+void Blinky::UpdateElapsedTime() {
+    static uint16_t s_updateCount = 0;
+    m_intervalEndTime = getMicros();
+    uint32_t elapsedTime = m_intervalEndTime - m_intervalStartTime;
+    uint32_t elapsedTimeDelta = 0;
+
+    if ( elapsedTime > 1000 )
+    {
+        if ( s_updateCount > kIntervalOffset )
+        {
+            if ( elapsedTime > m_intervalElapsedTime )
+                elapsedTimeDelta = elapsedTime - m_intervalElapsedTime;
+            else
+                elapsedTimeDelta = m_intervalElapsedTime - elapsedTime;
+
+            m_intervalCount += 1;
+
+            if ( elapsedTimeDelta > m_maxElapsedTimeDelta )
+            {
+                m_maxElapsedTimeDelta = elapsedTimeDelta;
+            }
+            if ( elapsedTimeDelta < m_minElapsedTimeDelta )
+            {
+                m_minElapsedTimeDelta = elapsedTimeDelta;
+            }
+
+            m_avgElapsedTimeDelta += elapsedTimeDelta;
+            m_avgElapsedTime += elapsedTime;
+        }
+
+        m_intervalElapsedTime = elapsedTime;
+        s_updateCount += 1;
+    }
+}
+
+//${AOs::Blinky::DisplayElapsedTime} .........................................
+void Blinky::DisplayElapsedTime() {
+    CONSOLE_DISPLAY_ARGS("elapsed time us = %d\r\n", m_intervalElapsedTime);
+}
+
+//${AOs::Blinky::DisplayElapsedTimeDelta} ....................................
+void Blinky::DisplayElapsedTimeDelta() {
+    if ( m_intervalCount > 120 )
+    {
+        m_avgElapsedTimeDelta = m_avgElapsedTimeDelta / m_intervalCount;
+        m_avgElapsedTime = m_avgElapsedTime / m_intervalCount;
+
+        CONSOLE_DISPLAY_ARGS("max/min/avg/avg elapsed time delta us = %d/%d/%d/%d\r\n",
+            m_maxElapsedTimeDelta, m_minElapsedTimeDelta,
+            m_avgElapsedTimeDelta, m_avgElapsedTime);
+
+        m_avgElapsedTimeDelta = 0;
+        m_avgElapsedTime = 0;
+        m_intervalEndTime = getMicros();
+        m_intervalCount = 0;
+    }
+}
 
 //${AOs::Blinky::SM} .........................................................
 Q_STATE_DEF(Blinky, initial) {
     //${AOs::Blinky::SM::initial}
     //m_timeEvt.armX(BSP_TICKS_PER_SEC/2, 0);
     (void)e; // unused parameter
+    m_maxElapsedTimeDelta = 0;
+    m_minElapsedTimeDelta = 10000;
+    m_avgElapsedTimeDelta = 0;
+    m_avgElapsedTime = 0;
+    m_intervalCount = 0;
     return tran(&off);
 }
 
@@ -169,12 +245,15 @@ Q_STATE_DEF(Blinky, off) {
         //${AOs::Blinky::SM::off}
         case Q_ENTRY_SIG: {
             m_timeEvt.armX(1000, 0U);
+            m_intervalStartTime = getMicros();
             BSP_ledOff();
             status_ = Q_RET_HANDLED;
             break;
         }
         //${AOs::Blinky::SM::off::TIMEOUT}
         case TIMEOUT_SIG: {
+            UpdateElapsedTime();
+            DisplayElapsedTimeDelta();
             status_ = tran(&on);
             break;
         }
@@ -193,12 +272,15 @@ Q_STATE_DEF(Blinky, on) {
         //${AOs::Blinky::SM::on}
         case Q_ENTRY_SIG: {
             m_timeEvt.armX(1000, 0U);
+            m_intervalStartTime = getMicros();
             BSP_ledOn();
             status_ = Q_RET_HANDLED;
             break;
         }
         //${AOs::Blinky::SM::on::TIMEOUT}
         case TIMEOUT_SIG: {
+            UpdateElapsedTime();
+            DisplayElapsedTimeDelta();
             status_ = tran(&off);
             break;
         }
