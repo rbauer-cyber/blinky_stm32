@@ -106,8 +106,8 @@ private:
 
 public:
     static Blinky inst;
-    std::uint32_t m_intervalStartTime;
-    std::uint32_t m_intervalEndTime;
+    std::uint64_t m_intervalStartTime;
+    std::uint64_t m_intervalEndTime;
     std::uint32_t m_intervalElapsedTime;
     std::uint32_t m_intervalElapsedTimeDelta;
     std::uint32_t m_maxElapsedTimeDelta;
@@ -116,6 +116,7 @@ public:
     std::uint32_t m_avgElapsedTimeDelta;
     const std::uint32_t kIntervalOffset;
     std::uint32_t m_avgElapsedTime;
+    std::uint32_t m_intervalThresholdCount;
 
 public:
     Blinky();
@@ -195,6 +196,11 @@ void Blinky::UpdateElapsedTime() {
 
             m_avgElapsedTimeDelta += elapsedTimeDelta;
             m_avgElapsedTime += elapsedTime;
+
+            if ( elapsedTimeDelta > 100 )
+            {
+                m_intervalThresholdCount += 1;
+            }
         }
 
         m_intervalElapsedTime = elapsedTime;
@@ -214,13 +220,17 @@ void Blinky::DisplayElapsedTimeDelta() {
         m_avgElapsedTimeDelta = m_avgElapsedTimeDelta / m_intervalCount;
         m_avgElapsedTime = m_avgElapsedTime / m_intervalCount;
 
-        CONSOLE_DISPLAY_ARGS("max/min/avg/avg elapsed time delta us = %d/%d/%d/%d\r\n",
+        CONSOLE_DISPLAY_ARGS("max/min/avg/avg/cnt elapsed time delta us = %d/%d/%d/%d/%d\r\n",
             m_maxElapsedTimeDelta, m_minElapsedTimeDelta,
-            m_avgElapsedTimeDelta, m_avgElapsedTime);
+            m_avgElapsedTimeDelta, m_avgElapsedTime,
+            m_intervalThresholdCount);
 
+        m_maxElapsedTimeDelta = 0;
+        m_minElapsedTimeDelta = 10000;
         m_avgElapsedTimeDelta = 0;
         m_avgElapsedTime = 0;
         m_intervalEndTime = getMicros();
+        m_intervalThresholdCount = 0;
         m_intervalCount = 0;
     }
 }
@@ -235,6 +245,7 @@ Q_STATE_DEF(Blinky, initial) {
     m_avgElapsedTimeDelta = 0;
     m_avgElapsedTime = 0;
     m_intervalCount = 0;
+    m_intervalThresholdCount = 0;
     return tran(&off);
 }
 

@@ -69,22 +69,22 @@ extern "C" {
 
 void QF_int_disable_(void)
 {
-	HAL_SuspendTick();
+	//HAL_SuspendTick();
 }
 
 void QF_int_enable_(void)
 {
-	HAL_ResumeTick();
+	//HAL_ResumeTick();
 }
 
 void QF_crit_entry_(void)
 {
-	HAL_SuspendTick();
+	//HAL_SuspendTick();
 }
 
 void QF_crit_exit_(void)
 {
-	HAL_ResumeTick();
+	//HAL_ResumeTick();
 }
 
 volatile static uint16_t s_sysAppInterrupt = 0;
@@ -204,7 +204,7 @@ void start() {
     // instantiate and start AOs/threads...
 
     consoleDisplay("BSP: starting blinky\r\n");
-    static QP::QEvtPtr blinkyQueueSto[10];
+    static QP::QEvtPtr blinkyQueueSto[20];
     APP::AO_Blinky->start(
         1U,                         // QP prio. of the AO
         blinkyQueueSto,              // event queue storage

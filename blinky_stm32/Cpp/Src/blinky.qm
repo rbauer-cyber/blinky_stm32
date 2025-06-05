@@ -12,9 +12,9 @@
    <!--${AOs::Blinky::inst}-->
    <attribute name="inst" type="Blinky" visibility="0x00" properties="0x01"/>
    <!--${AOs::Blinky::m_intervalStartTime}-->
-   <attribute name="m_intervalStartTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
+   <attribute name="m_intervalStartTime" type="std::uint64_t" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::m_intervalEndTime}-->
-   <attribute name="m_intervalEndTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
+   <attribute name="m_intervalEndTime" type="std::uint64_t" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::m_intervalElapsedTime}-->
    <attribute name="m_intervalElapsedTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::m_intervalElapsedTimeDelta}-->
@@ -31,6 +31,8 @@
    <attribute name="kIntervalOffset" type="const std::uint32_t" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::m_avgElapsedTime}-->
    <attribute name="m_avgElapsedTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
+   <!--${AOs::Blinky::m_intervalThresholdCount}-->
+   <attribute name="m_intervalThresholdCount" type="std::uint32_t" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::Blinky}-->
    <operation name="Blinky" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Blinky::initial)),
@@ -66,6 +68,11 @@ if ( elapsedTime &gt; 1000 )
 
         m_avgElapsedTimeDelta += elapsedTimeDelta;
         m_avgElapsedTime += elapsedTime;
+
+        if ( elapsedTimeDelta &gt; 100 )
+        {
+            m_intervalThresholdCount += 1;
+        }
     }
 
     m_intervalElapsedTime = elapsedTime;
@@ -83,13 +90,17 @@ if ( elapsedTime &gt; 1000 )
     m_avgElapsedTimeDelta = m_avgElapsedTimeDelta / m_intervalCount;
     m_avgElapsedTime = m_avgElapsedTime / m_intervalCount;
 
-    CONSOLE_DISPLAY_ARGS(&quot;max/min/avg/avg elapsed time delta us = %d/%d/%d/%d\r\n&quot;,
+    CONSOLE_DISPLAY_ARGS(&quot;max/min/avg/avg/cnt elapsed time delta us = %d/%d/%d/%d/%d\r\n&quot;,
         m_maxElapsedTimeDelta, m_minElapsedTimeDelta,
-        m_avgElapsedTimeDelta, m_avgElapsedTime);
+        m_avgElapsedTimeDelta, m_avgElapsedTime,
+        m_intervalThresholdCount);
 
+    m_maxElapsedTimeDelta = 0;
+    m_minElapsedTimeDelta = 10000;
     m_avgElapsedTimeDelta = 0;
     m_avgElapsedTime = 0;
     m_intervalEndTime = getMicros();
+    m_intervalThresholdCount = 0;
     m_intervalCount = 0;
 }</code>
    </operation>
@@ -103,7 +114,8 @@ m_maxElapsedTimeDelta = 0;
 m_minElapsedTimeDelta = 10000;
 m_avgElapsedTimeDelta = 0;
 m_avgElapsedTime = 0;
-m_intervalCount = 0;</action>
+m_intervalCount = 0;
+m_intervalThresholdCount = 0;</action>
      <initial_glyph conn="2,2,5,1,20,6,-4">
       <action box="0,-2,21,2"/>
      </initial_glyph>
