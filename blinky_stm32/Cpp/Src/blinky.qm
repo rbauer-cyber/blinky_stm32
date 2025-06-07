@@ -122,8 +122,8 @@ m_intervalThresholdCount = 0;</action>
     </initial>
     <!--${AOs::Blinky::SM::off}-->
     <state name="off">
-     <entry brief="off">m_timeEvt.armX(1000, 0U);
-m_intervalStartTime = getMicros();
+     <entry brief="off">m_intervalStartTime = getMicros();
+m_timeEvt.armX(1000, 0U);
 BSP_ledOff();</entry>
      <!--${AOs::Blinky::SM::off::TIMEOUT}-->
      <tran trig="TIMEOUT" target="../../2">
@@ -139,8 +139,8 @@ DisplayElapsedTimeDelta();</action>
     </state>
     <!--${AOs::Blinky::SM::on}-->
     <state name="on">
-     <entry brief="on">m_timeEvt.armX(1000, 0U);
-m_intervalStartTime = getMicros();
+     <entry brief="on">m_intervalStartTime = getMicros();
+m_timeEvt.armX(1000, 0U);
 BSP_ledOn();</entry>
      <!--${AOs::Blinky::SM::on::TIMEOUT}-->
      <tran trig="TIMEOUT" target="../../1">
@@ -157,6 +157,8 @@ DisplayElapsedTimeDelta();</action>
     <state_diagram size="26,34"/>
    </statechart>
   </class>
+  <!--${AOs::CMeasure}-->
+  <class name="CMeasure"/>
  </package>
  <!--${.}-->
  <directory name=".">

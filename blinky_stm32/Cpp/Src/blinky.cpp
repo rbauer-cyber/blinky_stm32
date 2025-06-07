@@ -255,8 +255,8 @@ Q_STATE_DEF(Blinky, off) {
     switch (e->sig) {
         //${AOs::Blinky::SM::off}
         case Q_ENTRY_SIG: {
-            m_timeEvt.armX(1000, 0U);
             m_intervalStartTime = getMicros();
+            m_timeEvt.armX(1000, 0U);
             BSP_ledOff();
             status_ = Q_RET_HANDLED;
             break;
@@ -282,8 +282,8 @@ Q_STATE_DEF(Blinky, on) {
     switch (e->sig) {
         //${AOs::Blinky::SM::on}
         case Q_ENTRY_SIG: {
-            m_timeEvt.armX(1000, 0U);
             m_intervalStartTime = getMicros();
+            m_timeEvt.armX(1000, 0U);
             BSP_ledOn();
             status_ = Q_RET_HANDLED;
             break;

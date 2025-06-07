@@ -39,6 +39,8 @@
 #include "stm32f4xx_hal.h"
 // add other drivers if necessary...
 
+#define USE_LOCAL_CRITICAL_SECTIONS
+
 #ifdef Q_SPY
     #error Simple Blinky Application does not provide Spy build configuration
 #endif
@@ -67,6 +69,7 @@ constexpr std::uint32_t B1_PIN      {13U};
 extern "C" {
 #endif
 
+#ifdef USE_LOCAL_CRITICAL_SECTIONS
 void QF_int_disable_(void)
 {
 	//HAL_SuspendTick();
@@ -103,6 +106,7 @@ volatile uint16_t QF_getSysAppEvent()
 {
 	return s_sysAppInterrupt;
 }
+#endif
 
 #ifdef __cplusplus
 }

@@ -23,11 +23,17 @@
 
 extern CMultiLed g_multiLed;
 
+volatile uint32_t s_lastTime = 0;
+volatile uint32_t s_elapsedTime = 0;
+
 void appSysTickHandler()
 {
 	// Use this variable to communicate with QV::onIdle
 	// to indicate that a critical interrupt from the app
 	// has occurred and needs to be service.
+	// uint32_t currentTime = getMicros();
+	// s_elapsedTime = currentTime - s_lastTime;
+	// s_lastTime = currentTime;
 	Q_SysTick_Handler();
 
 	if ( !QF_getSysAppEvent() )
