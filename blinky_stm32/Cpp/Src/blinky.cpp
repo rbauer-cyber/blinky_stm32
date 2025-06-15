@@ -40,6 +40,7 @@
 #include "main.h"
 #include "console.h"
 #include "multiLed.hpp"
+#include "measure.hpp"
 
 using namespace std;
 using namespace QP;
@@ -47,6 +48,8 @@ using namespace QP;
 #ifdef Q_SPY
     #error Simple Blinky Application does not provide Spy build configuration
 #endif
+
+extern uint16_t g_appReady;
 
 enum { BSP_TICKS_PER_SEC = 2000 };
 
@@ -98,6 +101,7 @@ enum BlinkySignals {
 
 //=============== ask QM to declare the Blinky class ==================
 //$declare${AOs::Blinky} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+namespace APP {
 
 //${AOs::Blinky} .............................................................
 class Blinky : public QP::QActive {
@@ -106,32 +110,33 @@ private:
 
 public:
     static Blinky inst;
-    std::uint64_t m_intervalStartTime;
-    std::uint64_t m_intervalEndTime;
-    std::uint32_t m_intervalElapsedTime;
-    std::uint32_t m_intervalElapsedTimeDelta;
-    std::uint32_t m_maxElapsedTimeDelta;
-    std::uint32_t m_intervalCount;
-    std::uint32_t m_minElapsedTimeDelta;
-    std::uint32_t m_avgElapsedTimeDelta;
-    const std::uint32_t kIntervalOffset;
-    std::uint32_t m_avgElapsedTime;
-    std::uint32_t m_intervalThresholdCount;
+    CMeasure m_measure;
 
 public:
     Blinky();
-    void UpdateElapsedTime();
-    void DisplayElapsedTime();
-    void DisplayElapsedTimeDelta();
 
 protected:
     Q_STATE_DECL(initial);
     Q_STATE_DECL(off);
     Q_STATE_DECL(on);
 }; // class Blinky
-//$enddecl${AOs::Blinky} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-QActive * const AO_Blinky = &Blinky::inst;
+} // namespace APP
+//$enddecl${AOs::Blinky} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//$skip${QP_VERSION} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+// Check for the minimum required QP version
+#if (QP_VERSION < 730U) || (QP_VERSION != ((QP_RELEASE^4294967295U)%0x2710U))
+#error qpcpp version 7.3.0 or higher required
+#endif
+//$endskip${QP_VERSION} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+//$define${AOs::AO_Blinky} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+namespace APP {
+
+//${AOs::AO_Blinky} ..........................................................
+QP::QActive * const AO_Blinky = &Blinky::inst;
+
+} // namespace APP
+//$enddef${AOs::AO_Blinky} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 int bspMain() {
     static QF_MPOOL_EL(QP::QEvt) smlPoolSto[20];
@@ -142,20 +147,18 @@ int bspMain() {
     QF::onStartup();
 
     static QEvtPtr blinky_queueSto[10];
-    AO_Blinky->start(1U, // priority
+    APP::AO_Blinky->start(1U, // priority
                      blinky_queueSto, Q_DIM(blinky_queueSto),
                      nullptr, 0U); // no stack
+
+    g_appReady = 1;
+
     return QF::run(); // run the QF application
 }
 
 //================ ask QM to define the Blinky class ==================
-//$skip${QP_VERSION} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-// Check for the minimum required QP version
-#if (QP_VERSION < 730U) || (QP_VERSION != ((QP_RELEASE^4294967295U)%0x2710U))
-#error qpcpp version 7.3.0 or higher required
-#endif
-//$endskip${QP_VERSION} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //$define${AOs::Blinky} vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+namespace APP {
 
 //${AOs::Blinky} .............................................................
 Blinky Blinky::inst;
@@ -163,89 +166,17 @@ Blinky Blinky::inst;
 //${AOs::Blinky::Blinky} .....................................................
 Blinky::Blinky()
 : QActive(Q_STATE_CAST(&Blinky::initial)),
-    m_timeEvt(this, TIMEOUT_SIG, 0U),
-    kIntervalOffset(4)
+    m_timeEvt(this, TIMEOUT_SIG, 0U)
 {}
-
-//${AOs::Blinky::UpdateElapsedTime} ..........................................
-void Blinky::UpdateElapsedTime() {
-    static uint16_t s_updateCount = 0;
-    m_intervalEndTime = getMicros();
-    uint32_t elapsedTime = m_intervalEndTime - m_intervalStartTime;
-    uint32_t elapsedTimeDelta = 0;
-
-    if ( elapsedTime > 1000 )
-    {
-        if ( s_updateCount > kIntervalOffset )
-        {
-            if ( elapsedTime > m_intervalElapsedTime )
-                elapsedTimeDelta = elapsedTime - m_intervalElapsedTime;
-            else
-                elapsedTimeDelta = m_intervalElapsedTime - elapsedTime;
-
-            m_intervalCount += 1;
-
-            if ( elapsedTimeDelta > m_maxElapsedTimeDelta )
-            {
-                m_maxElapsedTimeDelta = elapsedTimeDelta;
-            }
-            if ( elapsedTimeDelta < m_minElapsedTimeDelta )
-            {
-                m_minElapsedTimeDelta = elapsedTimeDelta;
-            }
-
-            m_avgElapsedTimeDelta += elapsedTimeDelta;
-            m_avgElapsedTime += elapsedTime;
-
-            if ( elapsedTimeDelta > 100 )
-            {
-                m_intervalThresholdCount += 1;
-            }
-        }
-
-        m_intervalElapsedTime = elapsedTime;
-        s_updateCount += 1;
-    }
-}
-
-//${AOs::Blinky::DisplayElapsedTime} .........................................
-void Blinky::DisplayElapsedTime() {
-    CONSOLE_DISPLAY_ARGS("elapsed time us = %d\r\n", m_intervalElapsedTime);
-}
-
-//${AOs::Blinky::DisplayElapsedTimeDelta} ....................................
-void Blinky::DisplayElapsedTimeDelta() {
-    if ( m_intervalCount > 120 )
-    {
-        m_avgElapsedTimeDelta = m_avgElapsedTimeDelta / m_intervalCount;
-        m_avgElapsedTime = m_avgElapsedTime / m_intervalCount;
-
-        CONSOLE_DISPLAY_ARGS("max/min/avg/avg/cnt elapsed time delta us = %d/%d/%d/%d/%d\r\n",
-            m_maxElapsedTimeDelta, m_minElapsedTimeDelta,
-            m_avgElapsedTimeDelta, m_avgElapsedTime,
-            m_intervalThresholdCount);
-
-        m_maxElapsedTimeDelta = 0;
-        m_minElapsedTimeDelta = 10000;
-        m_avgElapsedTimeDelta = 0;
-        m_avgElapsedTime = 0;
-        m_intervalEndTime = getMicros();
-        m_intervalThresholdCount = 0;
-        m_intervalCount = 0;
-    }
-}
 
 //${AOs::Blinky::SM} .........................................................
 Q_STATE_DEF(Blinky, initial) {
     //${AOs::Blinky::SM::initial}
     //m_timeEvt.armX(BSP_TICKS_PER_SEC/2, 0);
     (void)e; // unused parameter
-    m_maxElapsedTimeDelta = 0;
-    m_minElapsedTimeDelta = 10000;
-    m_avgElapsedTimeDelta = 0;
-    m_avgElapsedTime = 0;
-    m_intervalCount = 0;
-    m_intervalThresholdCount = 0;
+    m_measure.Initialize();
+    m_measure.Run();
+    m_timeEvt.armX(1000, 1000);
     return tran(&off);
 }
 
@@ -255,16 +186,17 @@ Q_STATE_DEF(Blinky, off) {
     switch (e->sig) {
         //${AOs::Blinky::SM::off}
         case Q_ENTRY_SIG: {
-            m_intervalStartTime = getMicros();
-            m_timeEvt.armX(1000, 0U);
+            //m_intervalStartTime = getMicros();
+            m_measure.Start();
+            //m_timeEvt.armX(1000, 0U);
             BSP_ledOff();
             status_ = Q_RET_HANDLED;
             break;
         }
         //${AOs::Blinky::SM::off::TIMEOUT}
         case TIMEOUT_SIG: {
-            UpdateElapsedTime();
-            DisplayElapsedTimeDelta();
+            m_measure.UpdateElapsedTime();
+            m_measure.DisplayElapsedTimeDelta();
             status_ = tran(&on);
             break;
         }
@@ -282,16 +214,17 @@ Q_STATE_DEF(Blinky, on) {
     switch (e->sig) {
         //${AOs::Blinky::SM::on}
         case Q_ENTRY_SIG: {
-            m_intervalStartTime = getMicros();
-            m_timeEvt.armX(1000, 0U);
+            //m_intervalStartTime = getMicros();
+            m_measure.Start();
+            //m_timeEvt.armX(1000, 0U);
             BSP_ledOn();
             status_ = Q_RET_HANDLED;
             break;
         }
         //${AOs::Blinky::SM::on::TIMEOUT}
         case TIMEOUT_SIG: {
-            UpdateElapsedTime();
-            DisplayElapsedTimeDelta();
+            m_measure.UpdateElapsedTime();
+            m_measure.DisplayElapsedTimeDelta();
             status_ = tran(&off);
             break;
         }
@@ -302,4 +235,6 @@ Q_STATE_DEF(Blinky, on) {
     }
     return status_;
 }
+
+} // namespace APP
 //$enddef${AOs::Blinky} ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

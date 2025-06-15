@@ -39,6 +39,8 @@
 #include "stm32f4xx_hal.h"
 // add other drivers if necessary...
 
+extern uint16_t g_appReady;
+
 #define USE_LOCAL_CRITICAL_SECTIONS
 
 #ifdef Q_SPY

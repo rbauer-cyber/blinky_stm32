@@ -4,105 +4,19 @@
  <!--${qpcpp}-->
  <framework name="qpcpp"/>
  <!--${AOs}-->
- <package name="AOs" stereotype="0x02">
+ <package name="AOs" stereotype="0x02" namespace="APP::">
   <!--${AOs::Blinky}-->
   <class name="Blinky" superclass="qpcpp::QActive">
    <!--${AOs::Blinky::m_timeEvt}-->
    <attribute name="m_timeEvt" type="QP::QTimeEvt" visibility="0x02" properties="0x00"/>
    <!--${AOs::Blinky::inst}-->
    <attribute name="inst" type="Blinky" visibility="0x00" properties="0x01"/>
-   <!--${AOs::Blinky::m_intervalStartTime}-->
-   <attribute name="m_intervalStartTime" type="std::uint64_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_intervalEndTime}-->
-   <attribute name="m_intervalEndTime" type="std::uint64_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_intervalElapsedTime}-->
-   <attribute name="m_intervalElapsedTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_intervalElapsedTimeDelta}-->
-   <attribute name="m_intervalElapsedTimeDelta" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_maxElapsedTimeDelta}-->
-   <attribute name="m_maxElapsedTimeDelta" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_intervalCount}-->
-   <attribute name="m_intervalCount" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_minElapsedTimeDelta}-->
-   <attribute name="m_minElapsedTimeDelta" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_avgElapsedTimeDelta}-->
-   <attribute name="m_avgElapsedTimeDelta" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::kIntervalOffset}-->
-   <attribute name="kIntervalOffset" type="const std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_avgElapsedTime}-->
-   <attribute name="m_avgElapsedTime" type="std::uint32_t" visibility="0x00" properties="0x00"/>
-   <!--${AOs::Blinky::m_intervalThresholdCount}-->
-   <attribute name="m_intervalThresholdCount" type="std::uint32_t" visibility="0x00" properties="0x00"/>
+   <!--${AOs::Blinky::m_measure}-->
+   <attribute name="m_measure" type="CMeasure" visibility="0x00" properties="0x00"/>
    <!--${AOs::Blinky::Blinky}-->
    <operation name="Blinky" type="" visibility="0x00" properties="0x00">
     <code>: QActive(Q_STATE_CAST(&amp;Blinky::initial)),
-    m_timeEvt(this, TIMEOUT_SIG, 0U),
-    kIntervalOffset(4)</code>
-   </operation>
-   <!--${AOs::Blinky::UpdateElapsedTime}-->
-   <operation name="UpdateElapsedTime" type="void" visibility="0x00" properties="0x00">
-    <code>static uint16_t s_updateCount = 0;
-m_intervalEndTime = getMicros();
-uint32_t elapsedTime = m_intervalEndTime - m_intervalStartTime;
-uint32_t elapsedTimeDelta = 0;
-
-if ( elapsedTime &gt; 1000 )
-{
-    if ( s_updateCount &gt; kIntervalOffset )
-    {
-        if ( elapsedTime &gt; m_intervalElapsedTime )
-            elapsedTimeDelta = elapsedTime - m_intervalElapsedTime;
-        else
-            elapsedTimeDelta = m_intervalElapsedTime - elapsedTime;
-
-        m_intervalCount += 1;
-
-        if ( elapsedTimeDelta &gt; m_maxElapsedTimeDelta )
-        {
-            m_maxElapsedTimeDelta = elapsedTimeDelta;
-        }
-        if ( elapsedTimeDelta &lt; m_minElapsedTimeDelta )
-        {
-            m_minElapsedTimeDelta = elapsedTimeDelta;
-        }
-
-        m_avgElapsedTimeDelta += elapsedTimeDelta;
-        m_avgElapsedTime += elapsedTime;
-
-        if ( elapsedTimeDelta &gt; 100 )
-        {
-            m_intervalThresholdCount += 1;
-        }
-    }
-
-    m_intervalElapsedTime = elapsedTime;
-    s_updateCount += 1;
-}</code>
-   </operation>
-   <!--${AOs::Blinky::DisplayElapsedTime}-->
-   <operation name="DisplayElapsedTime" type="void" visibility="0x00" properties="0x00">
-    <code>CONSOLE_DISPLAY_ARGS(&quot;elapsed time us = %d\r\n&quot;, m_intervalElapsedTime);</code>
-   </operation>
-   <!--${AOs::Blinky::DisplayElapsedTimeDelta}-->
-   <operation name="DisplayElapsedTimeDelta" type="void" visibility="0x00" properties="0x00">
-    <code>if ( m_intervalCount &gt; 120 )
-{
-    m_avgElapsedTimeDelta = m_avgElapsedTimeDelta / m_intervalCount;
-    m_avgElapsedTime = m_avgElapsedTime / m_intervalCount;
-
-    CONSOLE_DISPLAY_ARGS(&quot;max/min/avg/avg/cnt elapsed time delta us = %d/%d/%d/%d/%d\r\n&quot;,
-        m_maxElapsedTimeDelta, m_minElapsedTimeDelta,
-        m_avgElapsedTimeDelta, m_avgElapsedTime,
-        m_intervalThresholdCount);
-
-    m_maxElapsedTimeDelta = 0;
-    m_minElapsedTimeDelta = 10000;
-    m_avgElapsedTimeDelta = 0;
-    m_avgElapsedTime = 0;
-    m_intervalEndTime = getMicros();
-    m_intervalThresholdCount = 0;
-    m_intervalCount = 0;
-}</code>
+    m_timeEvt(this, TIMEOUT_SIG, 0U)</code>
    </operation>
    <!--${AOs::Blinky::SM}-->
    <statechart properties="0x00">
@@ -110,25 +24,21 @@ if ( elapsedTime &gt; 1000 )
     <initial target="../1">
      <action>//m_timeEvt.armX(BSP_TICKS_PER_SEC/2, 0);
 (void)e; // unused parameter
-m_maxElapsedTimeDelta = 0;
-m_minElapsedTimeDelta = 10000;
-m_avgElapsedTimeDelta = 0;
-m_avgElapsedTime = 0;
-m_intervalCount = 0;
-m_intervalThresholdCount = 0;</action>
+m_timeEvt.armX(1000, 1000);</action>
      <initial_glyph conn="2,2,5,1,20,6,-4">
       <action box="0,-2,21,2"/>
      </initial_glyph>
     </initial>
     <!--${AOs::Blinky::SM::off}-->
     <state name="off">
-     <entry brief="off">m_intervalStartTime = getMicros();
-m_timeEvt.armX(1000, 0U);
+     <entry brief="off">//m_intervalStartTime = getMicros();
+m_measure.Start();
+//m_timeEvt.armX(1000, 0U);
 BSP_ledOff();</entry>
      <!--${AOs::Blinky::SM::off::TIMEOUT}-->
      <tran trig="TIMEOUT" target="../../2">
-      <action>UpdateElapsedTime();
-DisplayElapsedTimeDelta();</action>
+      <action>m_measure.UpdateElapsedTime();
+m_measure.DisplayElapsedTimeDelta();</action>
       <tran_glyph conn="2,14,3,1,18,8,-2">
        <action box="0,-2,8,2"/>
       </tran_glyph>
@@ -139,13 +49,14 @@ DisplayElapsedTimeDelta();</action>
     </state>
     <!--${AOs::Blinky::SM::on}-->
     <state name="on">
-     <entry brief="on">m_intervalStartTime = getMicros();
-m_timeEvt.armX(1000, 0U);
+     <entry brief="on">//m_intervalStartTime = getMicros();
+m_measure.Start();
+//m_timeEvt.armX(1000, 0U);
 BSP_ledOn();</entry>
      <!--${AOs::Blinky::SM::on::TIMEOUT}-->
      <tran trig="TIMEOUT" target="../../1">
-      <action>UpdateElapsedTime();
-DisplayElapsedTimeDelta();</action>
+      <action>m_measure.UpdateElapsedTime();
+m_measure.DisplayElapsedTimeDelta();</action>
       <tran_glyph conn="2,28,3,1,20,-17,-4">
        <action box="0,-2,8,2"/>
       </tran_glyph>
@@ -157,9 +68,12 @@ DisplayElapsedTimeDelta();</action>
     <state_diagram size="26,34"/>
    </statechart>
   </class>
-  <!--${AOs::CMeasure}-->
-  <class name="CMeasure"/>
+  <!--${AOs::AO_Blinky}-->
+  <attribute name="AO_Blinky" type="QP::QActive * const" visibility="0x00" properties="0x00">
+   <code>= &amp;Blinky::inst;</code>
+  </attribute>
  </package>
+ <extern_package file="./../../../../quantum_addon_stm32/quantum_addon/Cpp/Src/addon_aos.qmp"/>
  <!--${.}-->
  <directory name=".">
   <!--${.::blinky.cpp}-->
@@ -169,6 +83,7 @@ DisplayElapsedTimeDelta();</action>
 #include &quot;main.h&quot;
 #include &quot;console.h&quot;
 #include &quot;multiLed.hpp&quot;
+#include &quot;measure.hpp&quot;
 
 using namespace std;
 using namespace QP;
@@ -176,6 +91,8 @@ using namespace QP;
 #ifdef Q_SPY
     #error Simple Blinky Application does not provide Spy build configuration
 #endif
+
+extern uint16_t g_appReady;
 
 enum { BSP_TICKS_PER_SEC = 2000 };
 
@@ -227,8 +144,7 @@ enum BlinkySignals {
 
 //=============== ask QM to declare the Blinky class ==================
 $declare${AOs::Blinky}
-
-QActive * const AO_Blinky = &amp;Blinky::inst;
+$define ${AOs::AO_Blinky}
 
 int bspMain() {
     static QF_MPOOL_EL(QP::QEvt) smlPoolSto[20];
@@ -239,9 +155,12 @@ int bspMain() {
     QF::onStartup();
 
     static QEvtPtr blinky_queueSto[10];
-    AO_Blinky-&gt;start(1U, // priority
+    APP::AO_Blinky-&gt;start(1U, // priority
                      blinky_queueSto, Q_DIM(blinky_queueSto),
                      nullptr, 0U); // no stack
+
+    g_appReady = 1;
+
     return QF::run(); // run the QF application
 }
 
